@@ -29,4 +29,4 @@ EXPOSE 8000
 
 COPY . /usr/src/app
 
-CMD ["python", "bot/main.py"]
+CMD ["python", "-m", "bot.main"]
