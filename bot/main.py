@@ -1,14 +1,15 @@
 import asyncio
 import logging
 from pathlib import Path
-
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from fluent.runtime import FluentLocalization, FluentResourceLoader
-from .commandsworker import set_bot_commands
+from bot.database.database import Database
+from bot.commandsworker import set_bot_commands
 from .handlers import setup_routers
 from .middlewares.l10n import L10nMiddleware
+from .middlewares.db import DatabaseMiddleware
 from .config import settings
 
 async def main():
@@ -22,7 +23,7 @@ async def main():
     l10n_loader = FluentResourceLoader(str(locales_path) + "/{locale}")
     l10n = FluentLocalization(
             ["ru"], 
-            ["strings.ftl", "errors.ftl"], 
+            ["strings.ftl", "logging.ftl", "errors.ftl"], 
             l10n_loader
         )
     
@@ -35,8 +36,11 @@ async def main():
     
     router = setup_routers()
     
+    
+    
     dp.include_router(router)
     
+    dp.update.middleware(DatabaseMiddleware(Database(l10n)))
     dp.update.middleware(L10nMiddleware(l10n))
 
     await set_bot_commands(bot, l10n)

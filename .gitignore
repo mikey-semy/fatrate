@@ -173,4 +173,6 @@ cython_debug/
 # LSP config files
 pyrightconfig.json
 
+# SQLITE
+fatrate.db
 # End of https://www.toptal.com/developers/gitignore/api/python
