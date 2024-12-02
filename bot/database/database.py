@@ -86,7 +86,7 @@ class Database:
             info(self.l10n.format_value("info-database-user-added"))
             
             # Обновляем только статус и префикс нового пользователя
-            current_status = self.get_status(conn, user_id, chat_id)
+            current_status = self._get_status(conn, user_id, chat_id)
             if current_status != status:
                 self.update_prefix(conn, user_id, prefix, chat_id)
                 self.update_status(conn, ser_id, status, chat_id)
@@ -100,8 +100,8 @@ class Database:
                 affected_status = self.l10n.format_value(affected_status_key)
 
                 # Обновляем только если префикс или статус изменились
-                current_prefix = self.get_prefix(conn, affected_user_id, chat_id)
-                current_status = self.get_status(conn, affected_user_id, chat_id)
+                current_prefix = self._get_prefix(conn, affected_user_id, chat_id)
+                current_status = self._get_status(conn, affected_user_id, chat_id)
                 if current_prefix != affected_prefix or current_status != affected_status:
                     self.update_prefix(conn, affected_user_id, affected_prefix, chat_id)
                     self.update_status(conn, affected_user_id, affected_status, chat_id)
@@ -135,7 +135,7 @@ class Database:
                 bmi = weight / (height_row[0]/100) ** 2
                 
                 # Получаем текущий статус тушки
-                current_status = self.get_status(conn, user_id, chat_id)
+                current_status = self._get_status(conn, user_id, chat_id)
             
                 # Вычисляем новый статус на основе нового BMI
                 new_status_key = get_bmi_status(bmi)
@@ -188,8 +188,8 @@ class Database:
             curr_status = self.l10n.format_value(status_key)
 
             # Проверяем, изменился ли префикс или статус
-            current_prefix = self.get_prefix(conn, curr_user_id, chat_id)
-            current_status = self.get_status(conn, curr_user_id, chat_id)
+            current_prefix = self._get_prefix(conn, curr_user_id, chat_id)
+            current_status = self._get_status(conn, curr_user_id, chat_id)
 
             if current_prefix != curr_prefix or current_status != curr_status:
                 self.update_prefix(conn, curr_user_id, curr_prefix, chat_id)
@@ -201,12 +201,20 @@ class Database:
             (prefix, user_id, chat_id)
         )
 
-    def get_prefix(self, conn: sqlite3.Connection, user_id: int, chat_id: int) -> str:
+    def _get_prefix(self, conn: sqlite3.Connection, user_id: int, chat_id: int) -> str:
         result = conn.execute(
             """SELECT prefix FROM users WHERE user_id = ? AND chat_id = ?""",
             (user_id, chat_id)
         ).fetchone()
         return result[0] if result else None
+
+    def get_prefix(self, user_id: int, chat_id: int) -> str:
+        with self.get_connection() as conn:
+            result = conn.execute(
+                """SELECT prefix FROM users WHERE user_id = ? AND chat_id = ?""",
+                (user_id, chat_id)
+            ).fetchone()
+            return result[0] if result else None
 
     def update_status(self, conn: sqlite3.Connection, user_id: int, status: str, chat_id: int):
         conn.execute(
@@ -214,12 +222,20 @@ class Database:
             (status, user_id, chat_id)
         )
 
-    def get_status(self, conn: sqlite3.Connection, user_id: int, chat_id: int) -> str:
+    def _get_status(self, conn: sqlite3.Connection, user_id: int, chat_id: int) -> str:
         result = conn.execute(
             """SELECT status FROM users WHERE user_id = ? AND chat_id = ?""",
             (user_id, chat_id)
         ).fetchone()
         return result[0] if result else None
+
+    def get_status(self, user_id: int, chat_id: int) -> str:
+        with self.get_connection() as conn:
+            result = conn.execute(
+                """SELECT status FROM users WHERE user_id = ? AND chat_id = ?""",
+                (user_id, chat_id)
+            ).fetchone()
+            return result[0] if result else None
 
     def get_user(self, user_id: int, chat_id: int):
         with self.get_connection() as conn:
