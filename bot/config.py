@@ -3,6 +3,7 @@ from pydantic import SecretStr
 
 class Settings(BaseSettings):
     bot_token: SecretStr
+    prompt: str = "Придумай обидное прозвище толстому человеку для рейтинга жирдяев."
     
     model_config = SettingsConfigDict(
         env_file="../.env",

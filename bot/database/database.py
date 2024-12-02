@@ -69,7 +69,8 @@ class Database:
                 ).fetchall()
 
                 # Ищем позицию нового жиробаса
-                position = next((index + 1 for index, (curr_user_id, _) in enumerate(all_users) if curr_user_id == user_id), None)
+                position = next((index + 1 for index, (curr_user_id, _) in enumerate(all_users) 
+                    if curr_user_id == user_id), None)
                 
                 # Генерим его титул и статус
                 prefix = get_fat_prefix(self.l10n, position, total, bmi)
@@ -85,12 +86,10 @@ class Database:
                 info(self.l10n.format_value("info-database-user-added"))
                 
                 # Обновляем только статус и префикс нового пользователя
-                conn.execute(
-                    """UPDATE users 
-                    SET prefix = ?, status = ?
-                    WHERE user_id = ? AND chat_id = ?""",
-                    (prefix, status, user_id, chat_id)
-                )
+                current_status = self.get_status(user_id, chat_id)
+                if current_status != status:
+                    self.update_prefix(user_id, prefix, chat_id)
+                    self.update_status(user_id, status, chat_id)
 
                 # Проверяем, смещает ли новый пользователь кого-то с первого или последнего места
                 if position == 1 or position == total:
@@ -141,7 +140,7 @@ class Database:
                 # Считаем новый BMI
                 bmi = weight / (height_row[0]/100) ** 2
                 
-                # Получаем текущий статус пользователя
+                # Получаем текущий статус тушки
                 current_status = self.get_status(user_id, chat_id)
             
                 # Вычисляем новый статус на основе нового BMI
@@ -157,6 +156,13 @@ class Database:
                 conn.commit() 
                 info(f"(БД) Пользователь {user_id} обновил вес и BMI")
 
+                # Проверяем, изменился ли статус
+                if current_status != new_status:
+                # Обновляем префикс только если статус изменился
+                    prefix = get_fat_prefix(self.l10n, None, None, bmi)  # Позиция и общее количество не нужны здесь
+                    self.update_prefix(user_id, prefix, chat_id)
+                    self.update_status(user_id, new_status, chat_id)
+                    
                 # Получаем общее количество юзеров
                 total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0]
             
