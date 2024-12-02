@@ -107,7 +107,7 @@ class Database:
                       measurement_date: date = date.today()
                       ) -> None:
         with self.get_connection() as conn:
-            
+            info(f"(БД) Пользователь {user_id} обновляет вес: {weight}")
             # Получаем последний рост
             cursor = conn.execute(
                 """SELECT height FROM measurements
@@ -115,14 +115,20 @@ class Database:
                 ORDER BY measurement_date DESC LIMIT 1""",
                 (user_id, chat_id)
             )
-            
+
             height_row = cursor.fetchone()
-            
+            info(f"(БД) Пользователь {user_id} получил последний рост: {height_row}")
             if height_row:
                 
                 # Считаем новый BMI
                 bmi = weight / (height_row[0]/100) ** 2
                 
+                # Получаем текущий статус пользователя
+                current_status = self.get_status(user_id, chat_id)
+            
+                # Вычисляем новый статус на основе нового BMI
+                new_status_key = get_bmi_status(bmi)
+                new_status = self.l10n.format_value(new_status_key)
                 # Обновляем вес и BMI
                 conn.execute(
                     """UPDATE measurements 
@@ -130,32 +136,36 @@ class Database:
                        WHERE user_id = ? AND chat_id = ? AND measurement_date = ?""",
                     (weight, bmi, user_id, chat_id, measurement_date)
                 )
+                conn.commit() 
+                info(f"(БД) Пользователь {user_id} обновил вес и BMI")
             
-            # Получаем общее количество юзеров
-            total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0]
+            # Сравниваем текущий статус с новым статусом
+            if current_status != new_status:
+                # Получаем общее количество юзеров
+                total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0]
             
-            # Получаем всех по убыванию BMI
-            all_users = conn.execute(
-                """SELECT user_id, bmi FROM measurements
-                WHERE chat_id = ?
-                ORDER BY bmi DESC""",
-                (chat_id,)
-            ).fetchall()
+                # Получаем всех по убыванию BMI
+                all_users = conn.execute(
+                    """SELECT user_id, bmi FROM measurements
+                    WHERE chat_id = ?
+                    ORDER BY bmi DESC""",
+                    (chat_id,)
+                ).fetchall()
             
-            # Обновляем префиксы и статусы для ВСЕХ
-            for position, (curr_user_id, curr_bmi) in enumerate(all_users, 1):
-                curr_prefix = get_fat_prefix(self.l10n, position, total, curr_bmi)
-                status_key = get_bmi_status(curr_bmi)
-                curr_status = self.l10n.format_value(status_key)
-                
-                conn.execute(
-                    """UPDATE users 
-                    SET prefix = ?, status = ?
-                    WHERE user_id = ? AND chat_id = ?""",
-                    (curr_prefix, curr_status, curr_user_id, chat_id)
-                )
-            conn.commit()
-            info(self.l10n.format_value("info-database-data-updated"))
+                # Обновляем префиксы и статусы для ВСЕХ
+                for position, (curr_user_id, curr_bmi) in enumerate(all_users, 1):
+                    curr_prefix = get_fat_prefix(self.l10n, position, total, curr_bmi)
+                    status_key = get_bmi_status(curr_bmi)
+                    curr_status = self.l10n.format_value(status_key)
+                    
+                    conn.execute(
+                        """UPDATE users 
+                        SET prefix = ?, status = ?
+                        WHERE user_id = ? AND chat_id = ?""",
+                        (curr_prefix, curr_status, curr_user_id, chat_id)
+                    )
+                conn.commit()
+                info(self.l10n.format_value("info-database-data-updated"))
     
     def update_prefix(self, user_id: int, prefix: str, chat_id: int):
         with self.get_connection() as conn:
