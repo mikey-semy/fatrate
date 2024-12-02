@@ -46,74 +46,68 @@ class Database:
                     ) -> None:
         
         with self.get_connection() as conn:
-            try:
-                # Если пользователь не существует, добавляем новое измерение
-                total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0] + 1
-                
-                bmi = weight / (height/100) ** 2
-                
-                # Добавляем измерение
-                conn.execute(
-                        """INSERT INTO measurements (user_id, chat_id, weight, height, bmi) 
-                        VALUES (?, ?, ?, ?, ?)""",
-                        (user_id, chat_id, weight, height, bmi)
-                )
-                info(self.l10n.format_value("info-database-data-added"))
-                
-                # Получаем список всех по убыванию BMI
-                all_users = conn.execute(
-                    """SELECT user_id, bmi FROM measurements
-                    WHERE chat_id = ?
-                    ORDER BY bmi DESC""",
-                    (chat_id,)
-                ).fetchall()
 
-                # Ищем позицию нового жиробаса
-                position = next((index + 1 for index, (curr_user_id, _) in enumerate(all_users) 
-                    if curr_user_id == user_id), None)
+            # Если пользователь не существует, добавляем новое измерение
+            total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0] + 1
+            
+            bmi = weight / (height/100) ** 2
+            
+            # Добавляем измерение
+            conn.execute(
+                    """INSERT INTO measurements (user_id, chat_id, weight, height, bmi) 
+                    VALUES (?, ?, ?, ?, ?)""",
+                    (user_id, chat_id, weight, height, bmi)
+            )
+            info(self.l10n.format_value("info-database-data-added"))
+            
+            # Получаем список всех по убыванию BMI
+            all_users = conn.execute(
+                """SELECT user_id, bmi FROM measurements
+                WHERE chat_id = ?
+                ORDER BY bmi DESC""",
+                (chat_id,)
+            ).fetchall()
+
+            # Ищем позицию нового жиробаса
+            position = next((index + 1 for index, (curr_user_id, _) in enumerate(all_users) 
+                if curr_user_id == user_id), None)
+            
+            # Генерим его титул и статус
+            prefix = get_fat_prefix(self.l10n, position, total, bmi)
+            status_key = get_bmi_status(bmi)
+            status = self.l10n.format_value(status_key)
+            
+            # Добавляем/обновляем жирок
+            conn.execute(
+                    """INSERT OR REPLACE INTO users (user_id, chat_id, username, prefix, status) 
+                    VALUES (?, ?, ?, ?, ?)""",
+                    (user_id, chat_id, username, prefix, status)
+            )   
+            info(self.l10n.format_value("info-database-user-added"))
+            
+            # Обновляем только статус и префикс нового пользователя
+            current_status = self.get_status(user_id, chat_id)
+            if current_status != status:
+                self.update_prefix(user_id, prefix, chat_id)
+                self.update_status(user_id, status, chat_id)
+
+            # Проверяем, смещает ли новый пользователь кого-то с первого или последнего места
+            if position == 1 or position == total:
+                affected_user_id = all_users[0][0] if position == 1 else all_users[-1][0]
+                affected_bmi = all_users[0][1] if position == 1 else all_users[-1][1]
+                affected_prefix = get_fat_prefix(self.l10n, 1 if position == 1 else total, total, affected_bmi)
+                affected_status_key = get_bmi_status(affected_bmi)
+                affected_status = self.l10n.format_value(affected_status_key)
                 
-                # Генерим его титул и статус
-                prefix = get_fat_prefix(self.l10n, position, total, bmi)
-                status_key = get_bmi_status(bmi)
-                status = self.l10n.format_value(status_key)
-                
-                # Добавляем/обновляем жирок
-                conn.execute(
-                        """INSERT OR REPLACE INTO users (user_id, chat_id, username, prefix, status) 
-                        VALUES (?, ?, ?, ?, ?)""",
-                        (user_id, chat_id, username, prefix, status)
-                )   
-                info(self.l10n.format_value("info-database-user-added"))
-                
-                # Обновляем только статус и префикс нового пользователя
-                current_status = self.get_status(user_id, chat_id)
-                if current_status != status:
-                    self.update_prefix(user_id, prefix, chat_id)
-                    self.update_status(user_id, status, chat_id)
-
-                # Проверяем, смещает ли новый пользователь кого-то с первого или последнего места
-                if position == 1 or position == total:
-                    affected_user_id = all_users[0][0] if position == 1 else all_users[-1][0]
-                    affected_bmi = all_users[0][1] if position == 1 else all_users[-1][1]
-                    affected_prefix = get_fat_prefix(self.l10n, 1 if position == 1 else total, total, affected_bmi)
-                    affected_status_key = get_bmi_status(affected_bmi)
-                    affected_status = self.l10n.format_value(affected_status_key)
-
-                    # Обновляем только если префикс или статус изменились
-                    current_prefix = self.get_prefix(affected_user_id, chat_id)
-                    current_status = self.get_status(affected_user_id, chat_id)
-
-                    if current_prefix != affected_prefix or current_status != affected_status:
-                        self.update_prefix(affected_user_id, affected_prefix, chat_id)
-                        self.update_status(affected_user_id, affected_status, chat_id)
-
-                        conn.commit()
-                        info("Transaction committed")
-                        return self.l10n.format_value("add-success", {"height": height, "weight": weight})
-
-            except sqlite3.Error as e:
-                info(f"Ошибка добавления данных: {e}")
-                return self.l10n.format_value("error-database-data-not-added")
+                # Обновляем только если префикс или статус изменились
+                current_prefix = self.get_prefix(affected_user_id, chat_id)
+                current_status = self.get_status(affected_user_id, chat_id)
+                if current_prefix != affected_prefix or current_status != affected_status:
+                    self.update_prefix(affected_user_id, affected_prefix, chat_id)
+                    self.update_status(affected_user_id, affected_status, chat_id)
+                    conn.commit()
+                    info("Transaction committed")
+                    return self.l10n.format_value("add-success", {"height": height, "weight": weight})
             
 
             
