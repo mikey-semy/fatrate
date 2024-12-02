@@ -112,7 +112,7 @@ class Database:
                         return self.l10n.format_value("add-success", {"height": height, "weight": weight})
 
             except sqlite3.Error as e:
-                info(self.l10n.format_value("error-database-data-not-added"))
+                info(self.l10n.format_value("error-database-data-not-added {e}"))
                 return self.l10n.format_value("error-database-data-not-added")
             
 
