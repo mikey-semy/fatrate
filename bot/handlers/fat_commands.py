@@ -12,11 +12,16 @@ router = Router()
 async def add_measurement(message: types.Message, l10n: FluentLocalization, db: Database):
     
     args = message.text.split()
+    
+    info(f"Пользователь {message.from_user.username} отправил команду /add с аргументами: {args}")
         
     if len(args) != 3:
         error(l10n.format_value("error-add"))
         await message.reply(l10n.format_value("add-error"))
+        info(f"Пользователь {message.from_user.username} не прошел проверку на количество аргументов: {len(args)}")
         return
+    
+    info(f"Пользователь {message.from_user.username} прошел проверку на количество аргументов: {len(args)}")
     
     try:
         height = float(args[1])
@@ -43,26 +48,43 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
     except (IndexError, ValueError):
         error(l10n.format_value("error-add"))
         await message.reply(l10n.format_value("add-error"))
+        info(f"Пользователь {message.from_user.username} не прошел проверку на значения: {not(30 <= weight <= 200) or not(100 <= height <= 250)}")
 
 @router.message(Command("update"))
 async def update_measurement(message: types.Message, l10n: FluentLocalization, db: Database):
+    
+    info(f"Пользователь {message.from_user.username} отправил команду /update с аргументами: {message.text}")
+    
     try:
         weight = float(message.text.split()[1])
+
+        info(f"Пользователь {message.from_user.username} ввел вес: {weight}")
+
         if not (30 <= weight <= 300):
             raise ValueError
         
+        info(f"Пользователь {message.from_user.username} прошел проверку на значения: {not (30 <= weight <= 300)}")
+        
         user = db.get_user(message.from_user.id, message.chat.id)
+
+        info(f"Пользователь есть в базе данных user: {user}")
+
         if not user:
             error(l10n.format_value("error-user-not-found"))
             await message.reply(l10n.format_value("no-user-error"))
+            info(f"Пользователь {message.from_user.username} не нашелся в базе данных")
             return
         
         db.update_weight(message.from_user.id, weight, message.chat.id)
         info(l10n.format_value("info-update-success"))
+        
+        info(f"Пользователь {message.from_user.username} обновил вес: {weight}")
+        
         await message.answer(l10n.format_value("update-success", {"weight": weight}))
     except (IndexError, ValueError):
         error(l10n.format_value("error-update"))
         await message.reply(l10n.format_value("update-error"))
+        info(f"Пользователь {message.from_user.username} не прошел проверку на значения: {not (30 <= weight <= 300)}")
 
 @router.message(Command("rating"))
 async def show_stats(message: types.Message, l10n: FluentLocalization, db: Database):
