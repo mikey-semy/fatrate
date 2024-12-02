@@ -83,7 +83,6 @@ skinny-prefix-noodle = 🍜 ЛАПША БЕСКОНЕЧНАЯ
 skinny-prefix-snake = 🐍 ГЛИСТА В ОБМОРОКЕ
 skinny-prefix-dust = 💨 ПЫЛИНКА ЛЕТУЧАЯ
 
-
 middle-prefix-norm = 👑 НОРМАЛЬНЫЙ ПАЦАН
 middle-prefix-chad = 💪 ЧИСТЫЙ ЧЭД
 middle-prefix-sigma = 🐺 СИГМА САМЕЦ

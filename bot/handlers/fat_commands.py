@@ -32,25 +32,14 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
         
         info(f"Пользователь {message.from_user.username} прошел проверку на значения: {not(30 <= weight <= 200) or not(100 <= height <= 250)}")
         
-        result = db.add_measurement(
+        message_response = db.add_measurement(
             user_id=message.from_user.id, 
             username=message.from_user.username, 
             height=height,
             weight=weight,
             chat_id=message.chat.id
             )
-        if result is True:
-            info(f"Пользователь {message.from_user.username} добавил данные в базу данных")
-            await message.answer(l10n.format_value("add-success", {
-                                    "height": height,
-                                    "weight": weight
-                            }))
-        elif result is False:
-        # Пользователь уже существует
-            await message.answer(l10n.format_value("user-already-exists"))
-        else:
-        # Произошла ошибка
-            await message.answer(l10n.format_value("error-database-data-not-added"))
+        await message.answer(message_response)
 
     except (IndexError, ValueError):
         error(l10n.format_value("error-add"))
