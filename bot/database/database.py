@@ -88,8 +88,8 @@ class Database:
             # Обновляем только статус и префикс нового пользователя
             current_status = self.get_status(user_id, chat_id)
             if current_status != status:
-                self.update_prefix(user_id, prefix, chat_id)
-                self.update_status(user_id, status, chat_id)
+                self.update_prefix(conn, user_id, prefix, chat_id)
+                self.update_status(conn, ser_id, status, chat_id)
 
             # Проверяем, смещает ли новый пользователь кого-то с первого или последнего места
             if position == 1 or position == total:
@@ -100,11 +100,11 @@ class Database:
                 affected_status = self.l10n.format_value(affected_status_key)
 
                 # Обновляем только если префикс или статус изменились
-                current_prefix = self.get_prefix(affected_user_id, chat_id)
-                current_status = self.get_status(affected_user_id, chat_id)
+                current_prefix = self.get_prefix(conn, affected_user_id, chat_id)
+                current_status = self.get_status(conn, affected_user_id, chat_id)
                 if current_prefix != affected_prefix or current_status != affected_status:
-                    self.update_prefix(affected_user_id, affected_prefix, chat_id)
-                    self.update_status(affected_user_id, affected_status, chat_id)
+                    self.update_prefix(conn, affected_user_id, affected_prefix, chat_id)
+                    self.update_status(conn, affected_user_id, affected_status, chat_id)
                     conn.commit()
                     info("Transaction committed")
                     return self.l10n.format_value("add-success", {"height": height, "weight": weight})
@@ -154,8 +154,8 @@ class Database:
                 if current_status != new_status:
                 # Обновляем префикс только если статус изменился
                     prefix = get_fat_prefix(self.l10n, None, None, bmi)  # Позиция и общее количество не нужны здесь
-                    self.update_prefix(user_id, prefix, chat_id)
-                    self.update_status(user_id, new_status, chat_id)
+                    self.update_prefix(conn, user_id, prefix, chat_id)
+                    self.update_status(conn,user_id, new_status, chat_id)
 
                 # Получаем общее количество юзеров
                 total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0]
@@ -174,12 +174,12 @@ class Database:
                 # Проверяем, изменилось ли положение пользователя
                 if new_position is not None and (new_position == 1 or new_position == total):
                     # Обновляем префиксы и статусы только для тех, кто смещается
-                    self.update_prefixes_and_statuses(all_users, chat_id)
+                    self.update_prefixes_and_statuses(conn, all_users, chat_id)
 
                 conn.commit()
                 info(self.l10n.format_value("info-database-data-updated"))
     
-    def update_prefixes_and_statuses(self, all_users, chat_id): 
+    def update_prefixes_and_statuses(self, conn: sqlite3.Connection, all_users: list, chat_id: int): 
         # Обновляем префиксы и статусы - используется только в update_weight
         total = len(all_users)
         for position, (curr_user_id, curr_bmi) in enumerate(all_users, 1):
@@ -188,33 +188,33 @@ class Database:
             curr_status = self.l10n.format_value(status_key)
 
             # Проверяем, изменился ли префикс или статус
-            current_prefix = self.get_prefix(curr_user_id, chat_id)
-            current_status = self.get_status(curr_user_id, chat_id)
+            current_prefix = self.get_prefix(conn, curr_user_id, chat_id)
+            current_status = self.get_status(conn, curr_user_id, chat_id)
 
             if current_prefix != curr_prefix or current_status != curr_status:
-                self.update_prefix(curr_user_id, curr_prefix, chat_id)
-                self.update_status(curr_user_id, curr_status, chat_id)
+                self.update_prefix(conn, curr_user_id, curr_prefix, chat_id)
+                self.update_status(conn, curr_user_id, curr_status, chat_id)
 
-    def update_prefix(self, user_id: int, prefix: str, chat_id: int):
+    def update_prefix(self, conn: sqlite3.Connection, user_id: int, prefix: str, chat_id: int):
         conn.execute(
             """UPDATE users SET prefix = ? WHERE user_id = ? AND chat_id = ?""",
             (prefix, user_id, chat_id)
         )
 
-    def get_prefix(self, user_id: int, chat_id: int) -> str:
+    def get_prefix(self, conn: sqlite3.Connection, user_id: int, chat_id: int) -> str:
         result = conn.execute(
             """SELECT prefix FROM users WHERE user_id = ? AND chat_id = ?""",
             (user_id, chat_id)
         ).fetchone()
         return result[0] if result else None
 
-    def update_status(self, user_id: int, status: str, chat_id: int):
+    def update_status(self, conn: sqlite3.Connection, user_id: int, status: str, chat_id: int):
         conn.execute(
             """UPDATE users SET status = ? WHERE user_id = ? AND chat_id = ?""",
             (status, user_id, chat_id)
         )
 
-    def get_status(self, user_id: int, chat_id: int) -> str:
+    def get_status(self, conn: sqlite3.Connection, user_id: int, chat_id: int) -> str:
         result = conn.execute(
             """SELECT status FROM users WHERE user_id = ? AND chat_id = ?""",
             (user_id, chat_id)
