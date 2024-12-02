@@ -98,7 +98,7 @@ class Database:
                 affected_prefix = get_fat_prefix(self.l10n, 1 if position == 1 else total, total, affected_bmi)
                 affected_status_key = get_bmi_status(affected_bmi)
                 affected_status = self.l10n.format_value(affected_status_key)
-                
+
                 # Обновляем только если префикс или статус изменились
                 current_prefix = self.get_prefix(affected_user_id, chat_id)
                 current_status = self.get_status(affected_user_id, chat_id)
@@ -196,36 +196,30 @@ class Database:
                 self.update_status(curr_user_id, curr_status, chat_id)
 
     def update_prefix(self, user_id: int, prefix: str, chat_id: int):
-        with self.get_connection() as conn:
-            conn.execute(
-                """UPDATE users SET prefix = ? WHERE user_id = ? AND chat_id = ?""",
-                (prefix, user_id, chat_id)
-            )
-            conn.commit()
+        conn.execute(
+            """UPDATE users SET prefix = ? WHERE user_id = ? AND chat_id = ?""",
+            (prefix, user_id, chat_id)
+        )
 
     def get_prefix(self, user_id: int, chat_id: int) -> str:
-        with self.get_connection() as conn:
-            result = conn.execute(
-                """SELECT prefix FROM users WHERE user_id = ? AND chat_id = ?""",
-                (user_id, chat_id)
-            ).fetchone()
-            return result[0] if result else None
+        result = conn.execute(
+            """SELECT prefix FROM users WHERE user_id = ? AND chat_id = ?""",
+            (user_id, chat_id)
+        ).fetchone()
+        return result[0] if result else None
 
     def update_status(self, user_id: int, status: str, chat_id: int):
-        with self.get_connection() as conn:
-            conn.execute(
-                """UPDATE users SET status = ? WHERE user_id = ? AND chat_id = ?""",
-                (status, user_id, chat_id)
-            )
-            conn.commit()
+        conn.execute(
+            """UPDATE users SET status = ? WHERE user_id = ? AND chat_id = ?""",
+            (status, user_id, chat_id)
+        )
 
     def get_status(self, user_id: int, chat_id: int) -> str:
-        with self.get_connection() as conn:
-            result = conn.execute(
-                """SELECT status FROM users WHERE user_id = ? AND chat_id = ?""",
-                (user_id, chat_id)
-            ).fetchone()
-            return result[0] if result else None
+        result = conn.execute(
+            """SELECT status FROM users WHERE user_id = ? AND chat_id = ?""",
+            (user_id, chat_id)
+        ).fetchone()
+        return result[0] if result else None
 
     def get_user(self, user_id: int, chat_id: int):
         with self.get_connection() as conn:
