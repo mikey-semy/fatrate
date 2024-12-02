@@ -7,7 +7,7 @@ from logging import info
 from bot.handlers.prefix import get_fat_prefix, get_bmi_status
 
 class Database:
-    def __init__(self, l10n: FluentLocalization, db_path: str = "bot/database/fatrate.db"):
+    def __init__(self, l10n: FluentLocalization, db_path: str = "bot/database/data/fatrate.db"):
         self.l10n = l10n
         self.db_path = db_path
         self.init_db()
