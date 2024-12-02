@@ -32,6 +32,11 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
         
         info(f"Пользователь {message.from_user.username} прошел проверку на значения: {not(30 <= weight <= 200) or not(100 <= height <= 250)}")
         
+        user_exists = db.check_user_exists(user_id=message.from_user.id, chat_id=message.chat.id)
+        if user_exists:
+            await message.answer(l10n.format_value("user-already-exists"))
+            return
+            
         message_response = db.add_measurement(
             user_id=message.from_user.id, 
             username=message.from_user.username, 

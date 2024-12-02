@@ -27,7 +27,16 @@ class Database:
             yield conn
         finally:
             conn.close()
-            
+
+    def user_exists(self, user_id: int, chat_id: int) -> bool:
+        with self.get_connection() as conn:
+            result = conn.execute(
+                """SELECT user_id FROM users
+                WHERE user_id = ? AND chat_id = ?""",
+                (user_id, chat_id)
+            ).fetchone()
+            return result is not None
+           
     def add_measurement(self, 
                     user_id: int, 
                     username: str,
@@ -38,17 +47,6 @@ class Database:
         
         with self.get_connection() as conn:
             try:
-                # Проверяем, существует ли пользователь
-                existing_user = conn.execute(
-                    """SELECT user_id FROM measurements
-                    WHERE user_id = ? AND chat_id = ?""",
-                    (user_id, chat_id)
-                ).fetchone()
-
-                if existing_user:
-                    info(self.l10n.format_value("info-database-user-exists"))
-                    return self.l10n.format_value("user-already-exists")
-                
                 # Если пользователь не существует, добавляем новое измерение
                 total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0] + 1
                 
