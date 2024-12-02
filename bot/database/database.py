@@ -7,7 +7,7 @@ from logging import info
 from bot.handlers.prefix import get_fat_prefix, get_bmi_status
 
 class Database:
-    def __init__(self, l10n: FluentLocalization, db_path: str = "fatrate.db"):
+    def __init__(self, l10n: FluentLocalization, db_path: str = "volume/fatrate.db"):
         self.l10n = l10n
         self.db_path = db_path
         self.init_db()
@@ -162,7 +162,7 @@ class Database:
                     prefix = get_fat_prefix(self.l10n, None, None, bmi)  # Позиция и общее количество не нужны здесь
                     self.update_prefix(user_id, prefix, chat_id)
                     self.update_status(user_id, new_status, chat_id)
-                    
+
                 # Получаем общее количество юзеров
                 total = conn.execute("SELECT COUNT(*) FROM users WHERE chat_id = ?", (chat_id,)).fetchone()[0]
             
