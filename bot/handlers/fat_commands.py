@@ -26,22 +26,18 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
         if not(30 <= weight <= 200) or not(100 <= height <= 250):
             raise ValueError
         
-        try:    
-            message_response = db.add_measurement(
-                user_id=message.from_user.id, 
-                username=message.from_user.username, 
-                height=height,
-                weight=weight,
-                chat_id=message.chat.id
-                )
-            await message.answer(message_response)
-        except IntegrityError:
-            await message.answer(l10n.format_value("measurement-already-exists"))
+        message_response = db.add_measurement(
+            user_id=message.from_user.id, 
+            username=message.from_user.username, 
+            height=height,
+            weight=weight,
+            chat_id=message.chat.id
+            )
+        await message.answer(message_response)
 
     except (IndexError, ValueError):
         error(l10n.format_value("error-add"))
         await message.reply(l10n.format_value("add-error"))
-        info(f"Пользователь {message.from_user.username} не прошел проверку на значения: {not(30 <= weight <= 200) or not(100 <= height <= 250)}")
 
 @router.message(Command("update"))
 async def update_measurement(message: types.Message, l10n: FluentLocalization, db: Database):
