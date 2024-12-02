@@ -8,4 +8,3 @@ update-error = Формат команды:
     /update вес
     Пример: /update 79.5
 
-measurement-already-exists = Ты уже есть в списке жирдяев!
