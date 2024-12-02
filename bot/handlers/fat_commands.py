@@ -32,7 +32,7 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
         
         info(f"Пользователь {message.from_user.username} прошел проверку на значения: {not(30 <= weight <= 200) or not(100 <= height <= 250)}")
         
-        user_exists = db.check_user_exists(user_id=message.from_user.id, chat_id=message.chat.id)
+        user_exists = db.user_exists(user_id=message.from_user.id, chat_id=message.chat.id)
         if user_exists:
             await message.answer(l10n.format_value("user-already-exists"))
             return
@@ -47,7 +47,7 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
             await message.answer(message_response)
         except IntegrityError:
             await message.answer(l10n.format_value("measurement-already-exists"))
-            
+
     except (IndexError, ValueError):
         error(l10n.format_value("error-add"))
         await message.reply(l10n.format_value("add-error"))
