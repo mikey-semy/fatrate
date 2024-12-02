@@ -26,7 +26,7 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
         if not(30 <= weight <= 200) or not(100 <= height <= 250):
             raise ValueError
 
-        if user_exists(message.from_user.id, message.chat.id):
+        if db.user_exists(message.from_user.id, message.chat.id):
             error(l10n.format_value("error-measurement-already-exists"))
             return
 
