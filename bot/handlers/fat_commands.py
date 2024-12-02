@@ -27,7 +27,7 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
             raise ValueError
 
         if db.user_exists(message.from_user.id, message.chat.id):
-            error(l10n.format_value("error-measurement-already-exists"))
+            await message.reply(l10n.format_value("error-measurement-already-exists"))
             return
 
         message_response = db.add_measurement(
