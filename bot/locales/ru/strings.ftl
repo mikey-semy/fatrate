@@ -24,6 +24,8 @@ add-success = Записал твои параметры:
     Вес: { $weight } кг
     Рост: { $height } см
 
+user-already-exists = Ты уже есть в списке жирдяев
+
 update-success = Обновил твой вес: { $weight } кг
 
 rating-empty = 
