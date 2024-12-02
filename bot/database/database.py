@@ -86,7 +86,7 @@ class Database:
             info(self.l10n.format_value("info-database-user-added"))
             
             # Обновляем только статус и префикс нового пользователя
-            current_status = self.get_status(user_id, chat_id)
+            current_status = self.get_status(conn, user_id, chat_id)
             if current_status != status:
                 self.update_prefix(conn, user_id, prefix, chat_id)
                 self.update_status(conn, ser_id, status, chat_id)
@@ -135,7 +135,7 @@ class Database:
                 bmi = weight / (height_row[0]/100) ** 2
                 
                 # Получаем текущий статус тушки
-                current_status = self.get_status(user_id, chat_id)
+                current_status = self.get_status(conn, user_id, chat_id)
             
                 # Вычисляем новый статус на основе нового BMI
                 new_status_key = get_bmi_status(bmi)
