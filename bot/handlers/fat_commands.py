@@ -13,15 +13,11 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
     
     args = message.text.split()
     
-    info(f"Пользователь {message.from_user.username} отправил команду /add с аргументами: {args}")
-        
     if len(args) != 3:
         error(l10n.format_value("error-add"))
         await message.reply(l10n.format_value("add-error"))
         info(f"Пользователь {message.from_user.username} не прошел проверку на количество аргументов: {len(args)}")
         return
-    
-    info(f"Пользователь {message.from_user.username} прошел проверку на количество аргументов: {len(args)}")
     
     try:
         height = float(args[1])
@@ -29,8 +25,6 @@ async def add_measurement(message: types.Message, l10n: FluentLocalization, db: 
         
         if not(30 <= weight <= 200) or not(100 <= height <= 250):
             raise ValueError
-        
-        info(f"Пользователь {message.from_user.username} прошел проверку на значения: {not(30 <= weight <= 200) or not(100 <= height <= 250)}")
         
         user_exists = db.user_exists(user_id=message.from_user.id, chat_id=message.chat.id)
         if user_exists:
@@ -60,8 +54,6 @@ async def update_measurement(message: types.Message, l10n: FluentLocalization, d
     
     try:
         weight = float(message.text.split()[1])
-
-        info(f"Пользователь {message.from_user.username} ввел вес: {weight}")
 
         if not (30 <= weight <= 300):
             raise ValueError
